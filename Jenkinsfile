@@ -1,53 +1,46 @@
 pipeline {
-  agent any
+    agent any
 
-  environment {
-    // fallback values; will be set properly when we call 'tool'
-    MVN_OPTS = '-B -V'
-  }
+    tools {
+        jdk 'jdk8'          // <-- This activates JDK 8
+        maven 'maven3'      // <-- Use your Maven installation name
+    }
 
-  stages {
-    stage('Prepare Tools') {
-      steps {
-        script {
-          // use the JDK tool configured in Manage Jenkins -> Global Tool Configuration
-          def javaHome = tool name: 'jdk17', type: 'jdk'          // name must match Jenkins config
-          env.JAVA_HOME = "${javaHome}"
-          env.PATH = "${javaHome}/bin:${env.PATH}"
+    environment {
+        git_branch = 'master'
+        git_url = 'git@github.com:maruthibg1998/sBoot.git'
+    }
 
-          // optional: use configured Maven
-          def mvnHome = tool name: 'maven3', type: 'maven'       // name must match Jenkins config
-          env.M2_HOME = "${mvnHome}"
-          env.PATH = "${mvnHome}/bin:${env.PATH}"
+    stages {
+
+        stage('Clone') {
+            steps {
+                git branch: "${git_branch}", url: "${git_url}"
+            }
         }
-      }
-    }
 
-    stage('Checkout') {
-      steps {
-        checkout scm
-      }
-    }
+        stage('Check Java Version') {
+            steps {
+                sh "java -version"   // Should show Java 1.8.x
+            }
+        }
 
-    stage('Compile') {
-      steps {
-        sh 'mvn ${MVN_OPTS} compile'
-      }
-    }
+        stage('Compile') {
+            steps {
+                sh 'mvn compile'
+            }
+        }
 
-    stage('Test') {
-      steps {
-        sh 'mvn ${MVN_OPTS} test'
-      }
-      post {
-        always { junit '**/target/surefire-reports/*.xml' }
-      }
-    }
+        stage('Test') {
+            steps {
+                sh 'mvn test'
+            }
+        }
 
-    stage('Package') {
-      steps {
-        sh 'mvn ${MVN_OPTS} clean package'
-      }
+        stage('Build Project') {
+            steps {
+                sh 'mvn clean install'
+            }
+        }
     }
-  }
 }
