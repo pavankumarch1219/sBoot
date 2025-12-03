@@ -1,46 +1,53 @@
 pipeline {
-    agent any
+  agent any
 
-    tools {
-        jdk 'jdk8'          // <-- This activates JDK 8
-        maven 'maven3'      // <-- Use your Maven installation name
+  environment {
+    // fallback values; will be set properly when we call 'tool'
+    MVN_OPTS = '-B -V'
+  }
+
+  stages {
+    stage('Prepare Tools') {
+      steps {
+        script {
+          // use the JDK tool configured in Manage Jenkins -> Global Tool Configuration
+          def javaHome = tool name: 'jdk17', type: 'jdk'          // name must match Jenkins config
+          env.JAVA_HOME = "${javaHome}"
+          env.PATH = "${javaHome}/bin:${env.PATH}"
+
+          // optional: use configured Maven
+          def mvnHome = tool name: 'maven3', type: 'maven'       // name must match Jenkins config
+          env.M2_HOME = "${mvnHome}"
+          env.PATH = "${mvnHome}/bin:${env.PATH}"
+        }
+      }
     }
 
-    environment {
-        git_branch = 'master'
-        git_url = 'https://github.com/pavankumarch1219/sBoot.git'
+    stage('Checkout') {
+      steps {
+        checkout scm
+      }
     }
 
-    stages {
-
-        stage('Clone') {
-            steps {
-                git branch: "${git_branch}", url: "${git_url}"
-            }
-        }
-
-        stage('Check Java Version') {
-            steps {
-                sh "java -version"   // Should show Java 1.8.x
-            }
-        }
-
-        stage('Compile') {
-            steps {
-                sh 'mvn compile'
-            }
-        }
-
-        stage('Test') {
-            steps {
-                sh 'mvn test'
-            }
-        }
-
-        stage('Build Project') {
-            steps {
-                sh 'mvn clean install'
-            }
-        }
+    stage('Compile') {
+      steps {
+        sh 'mvn ${MVN_OPTS} compile'
+      }
     }
+
+    stage('Test') {
+      steps {
+        sh 'mvn ${MVN_OPTS} test'
+      }
+      post {
+        always { junit '**/target/surefire-reports/*.xml' }
+      }
+    }
+
+    stage('Package') {
+      steps {
+        sh 'mvn ${MVN_OPTS} clean package'
+      }
+    }
+  }
 }
