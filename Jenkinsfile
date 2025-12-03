@@ -1,22 +1,17 @@
 pipeline {
     agent any
 
-    environment {
-        git_branch = 'master'
-        git_url = 'git@github.com:maruthibg1998/sBoot.git'
-    }
-
     stages {
 
-        stage('Clone') {
+        stage('Clone Project') {
             steps {
-                git branch: "${git_branch}", url: "${git_url}"
+                git branch: 'master', url: 'https://github.com/pavankumarch1219/sBoot.git'
             }
         }
 
-        stage('Check Java Version') {
+        stage('Clean') {
             steps {
-                sh "java -version"   // Should show Java 1.8.x
+                sh 'mvn clean'
             }
         }
 
@@ -32,9 +27,15 @@ pipeline {
             }
         }
 
-        stage('Build Project') {
+        stage('Package') {
             steps {
-                sh 'mvn clean install'
+                sh 'mvn package'
+            }
+        }
+
+        stage('Install') {
+            steps {
+                sh 'mvn install'
             }
         }
     }
