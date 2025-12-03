@@ -1,11 +1,6 @@
 pipeline {
     agent any
 
-    tools {
-        jdk 'jdk8'          // <-- This activates JDK 8
-        maven 'maven3'      // <-- Use your Maven installation name
-    }
-
     environment {
         git_branch = 'master'
         git_url = 'git@github.com:maruthibg1998/sBoot.git'
